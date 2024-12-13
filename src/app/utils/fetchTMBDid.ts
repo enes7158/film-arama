@@ -11,9 +11,8 @@ export const fetchTMDBId = async (imdbId: string): Promise<string | null> => {
   
       const data = await response.json();
   
-      // TMDB ID'yi çek
       const tmdbId = data.movie_results?.[0]?.id;
-      return tmdbId ? tmdbId.toString() : null; // TMDB ID yoksa null döndür
+      return tmdbId ? tmdbId.toString() : null;
     } catch (error) {
       console.error("Error fetching TMDB ID:", error);
       return null;

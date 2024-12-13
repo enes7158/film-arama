@@ -1,9 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { fetchMovies } from "../utils/fetchMovies";
-
-
 
 export interface Movie {
   id: number;
@@ -15,8 +12,6 @@ export interface Movie {
   language?: string;
   plot?: string;
 }
-
-
 
 const MovieCard: React.FC<Movie> = ({
   id,
