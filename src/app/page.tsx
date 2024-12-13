@@ -1,83 +1,156 @@
 "use client";
 
-import React, { useState , useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import SearchBar from "./components/SearchBar";
 import MovieCard, { Movie } from "./components/MovieCard";
 import { fetchMovies } from "./utils/fetchMovies";
-import {useRouter} from "next/navigation";
-
 
 export default function Home() {
-  const [movies, setMovies] = useState<Movie[]>([]);
+  const [defaultMovies, setDefaultMovies] = useState<Movie[]>([]);
+  const [searchMovies, setSearchMovies] = useState<Movie[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>(""); // Kategori seçimi
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  
-  const handleShowMore = () => {
-    router.push('/movies');
-  };
+  const [showAllMovies, setShowAllMovies] = useState(false);
 
-  
+
   const handleSearch = async (query: string) => {
     setLoading(true);
     try {
       setError(null);
       const fetchedMovies = await fetchMovies(query);
-      setMovies(fetchedMovies);
-      localStorage.setItem("movies", JSON.stringify(fetchedMovies));
-    } catch (err) {
+      setSearchMovies(fetchedMovies);
+    } catch(err) {
       setError((err as Error).message);
-      setMovies([]);
+      setSearchMovies([]);
     } finally {
       setLoading(false);
     }
+  }
+
+  useEffect(() => {
+    const fetchDefaultMovies = async () => {
+      setLoading(true);
+      try {
+        setError(null);
+        const movies = await fetchMovies("Avengers");
+        setDefaultMovies(movies);
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDefaultMovies();
+  }, []);
+
+  useEffect(() => {
+    const fetchMoviesByCategory = async () => {
+      if (!selectedCategory) return;
+
+      setLoading(true);
+      try {
+        setError(null);
+        const movies = await fetchMovies(selectedCategory);
+        setSearchMovies(movies);
+      } catch (err) {
+        setError((err as Error).message);
+        setSearchMovies([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMoviesByCategory();
+  }, [selectedCategory]);
+
+  const displayedMovies = showAllMovies ? (searchMovies.length > 0 ? searchMovies : defaultMovies)
+  : (searchMovies.length > 0 ? searchMovies.slice(0,4) : defaultMovies.slice(0,4));
+
+  const categories = ["Action", "Comedy", "Drama", "Horror", "Romance"];
+
+  const handleCategoryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedCategory(event.target.value.toLowerCase());
   };
 
+  const moviesToShow = searchMovies.length > 0 ? searchMovies : defaultMovies;
+
   return (
-    <div className="min-h-screen bg-gray-50 text-black p-4">
-      <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">
-        Dizi-Film Bulucu
-      </h1>
-      <div className="max-w-2xl mx-auto">
-        <SearchBar onSearch={handleSearch} />
+    <div className="min-h-screen bg-black text-white p-4">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-4">
+          <img
+            src="/netflix.png"
+            alt="Nesfliks Logo"
+            className="h-12 w-12 object-contain"
+          />
+          <h1 className="text-2xl font-bold">Nesfliks</h1>
+        </div>
+        <div className="flex items-center space-x-6 justify-center w-full max-w-3xl mx-auto ">
+          <SearchBar onSearch={handleSearch}/>
+          <select
+            onChange={handleCategoryChange}
+            value={selectedCategory}
+            className="bg-transparent text-white px-4 py-2 rounded-lg focus:outline-none"
+          >
+            <option value="">Kategori Seç</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-      {error && <p className="text-red-500 mt-4 text-center">{error}</p>}
-      {loading ? (
-        <p className="text-gray-500 text-center mt-4">Yükleniyor...</p>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8 px-4">
-            {movies.length === 0 ? (
-              <p className="text-gray-500 text-center col-span-2">
-                Dizi-Film bulunamadı. Lütfen arama yapın.
-              </p>
-            ) : (
-              movies.slice(0, 2).map((movie, index) => (
-                <MovieCard
-                  key={index}
-                  title={movie.title}
-                  year={movie.year}
-                  poster={movie.poster}
-                  imdbRating={movie.imdbRating}
-                  actors={movie.actors}
-                  language={movie.language}
-                  plot={movie.plot}
-                />
-              ))
-            )}
-          </div>
-          {movies.length > 2 && (
-            <div className="flex justify-center mt-6">
-              <button
-                onClick={handleShowMore}
-                className="bg-black text-white px-4 py-2 rounded-lg shadow hover:bg-gray-500 transition-colors"
-              >
-                Daha Fazla Göster
-              </button>
+
+      
+      <main className="p-6">
+        {error && <p className="text-red-500 mt-4 text-center">{error}</p>}
+        {loading ? (
+          <p className="text-gray-500 text-center mt-4">Yükleniyor...</p>
+        ) : (
+          <>
+            <h2 className="text-2xl font-bold text-center mb-6">
+              {selectedCategory
+                ? `${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} Filmleri`
+                : "Popüler Filmler"}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8 px-4">
+              {moviesToShow.length === 0 ? (
+                <p className="text-gray-500 text-center col-span-2">
+                  Gösterilecek film bulunamadı.
+                </p>
+              ) : (
+                displayedMovies.map((movie, index) => (
+                  <MovieCard
+                    id={movie.id}
+                    key={index}
+                    title={movie.title}
+                    year={movie.year}
+                    poster={movie.poster}
+                    imdbRating={movie.imdbRating}
+                    actors={movie.actors}
+                    language={movie.language}
+                    plot={movie.plot}
+                  />
+                ))
+              )}
             </div>
-          )}
-        </>
-      )}
+          </>
+        )}
+      </main>
+    {(searchMovies.length > 4 || defaultMovies.length > 4) && !showAllMovies && (
+    <div className="flex justify-center mt-6">
+    <button
+      onClick={() => setShowAllMovies(true)}
+      className="bg-transparent text-white px-4 py-2 rounded-lg shadow hover:bg-gray-900 transition"
+    >
+      Daha Fazla Göster
+      </button>
     </div>
-  );  
+    )}
+
+    </div>
+  );
 }
