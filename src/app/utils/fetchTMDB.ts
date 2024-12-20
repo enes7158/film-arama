@@ -19,8 +19,10 @@ export const fetchTMDBTrailer = async (imdbId: string): Promise<string | null> =
   
       const data = await response.json();
       const trailer = data.results.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (video: any) => video.type === "Trailer" && video.site === "YouTube"
       );
+      
   
       return trailer ? `https://www.youtube.com/embed/${trailer.key}` : null;
     } catch (error) {

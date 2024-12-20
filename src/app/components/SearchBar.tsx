@@ -1,7 +1,7 @@
 "use client";
+
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -10,21 +10,21 @@ interface SearchBarProps {
 const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
   const [query, setQuery] = useState("");
   const router = useRouter();
-  const handleSearch = () => {
-    if (query.trim().length > 0) {
-      onSearch(query);
+
+  const handleSearch = async () => {
+    if (!query.trim()) return; // Boş sorguları engelle
+    await onSearch(query); // Arama işlemini gerçekleştir
+    router.push(`/movies?query=${encodeURIComponent(query)}`); // Arama sonrası yönlendirme
+  };
+
+  const handleKeyDown = async (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" && query.trim()) {
+      await onSearch(query);
       router.push(`/movies`);
     }
   };
-  
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if(event.key === 'Enter') {
-      onSearch(query);
-      router.push('/movies')
-    }
-  }
+
   return (
-  
     <div className="flex items-center space-x-4 bg-black border border-gray rounded-lg p-1 shadow-sm w-full max-w-3xl mx-auto">
       <input
         type="text"
@@ -45,3 +45,4 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
 };
 
 export default SearchBar;
+

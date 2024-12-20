@@ -1,3 +1,4 @@
+/* eslint-disable react/react-in-jsx-scope */
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
